@@ -6,6 +6,12 @@
 const char* SSID = "My wifi name";
 const char* PASSWORD = "My wifi password";
 
+// Humidor ranges
+int MIN_IDEAL_TEMPERATURE = 16;
+int MAX_IDEAL_TEMPERATURE = 22;
+int MIN_IDEAL_HUMIDITY = 68;
+int MAX_IDEAL_HUMIDITY = 75;
+
 WiFiServer server(80);
 String request;
 DHT dht(DHTPIN, DHTTYPE);
@@ -65,17 +71,20 @@ void loop() {
           client.println(".buttonRed {background-color: red;}</style></head>");
           client.println("<body><h1>HUMIDOR WEB SERVER</h1>");
           client.println("<p>TEMPERATURE</p>");
-          if (1) {
+
+          // Change button color to red if values are not between the target ones
+          if (t <= MAX_IDEAL_TEMPERATURE && t >= MIN_IDEAL_TEMPERATURE) {
             client.println("<p><button class=\"button\">"+temperature+"</button></p>");
           } else {
             client.println("<p><button class=\"button buttonRed\">"+temperature+"</button></p>");
           }
           client.println("<p>HUMIDITY</p>");
-          if (1) {
+          if (h <= MAX_IDEAL_HUMIDITY && h >= MIN_IDEAL_HUMIDITY) {
             client.println("<p><button class=\"button\">"+humidity+"</button></p>");
           } else {
             client.println("<p><button class=\"button buttonRed\">"+humidity+"</button></p>");
           }
+
           client.println("</body></html>");
           break;
         }
