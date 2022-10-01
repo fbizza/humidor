@@ -1,10 +1,13 @@
 #include <DHT.h>
 #include <WiFi.h>
+#include <FirebaseESP32.h>
 #define DHTPIN 5
 #define DHTTYPE DHT11
+#define FIREBASE_HOST "My firebase link"
+#define FIREBASE_AUTH "My firebasse secret password"
 
-const char* SSID = "My wifi name";
-const char* PASSWORD = "My wifi password";
+const char* SSID = "Wifi name";
+const char* PASSWORD = "Wifi password";
 
 // Humidor ranges
 int MIN_IDEAL_TEMPERATURE = 16;
@@ -15,6 +18,9 @@ int MAX_IDEAL_HUMIDITY = 75;
 WiFiServer server(80);
 String request;
 DHT dht(DHTPIN, DHTTYPE);
+FirebaseData fData;
+FirebaseJson json;
+size_t updateTime; // For updating values in the database
 
 void setup() {
   Serial.begin(115200);
@@ -37,15 +43,26 @@ void setup() {
 
   // Start web server
   server.begin(); 
+
+  // Start database connection
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnectWiFi(true);
+  Firebase.setReadTimeout(fData, 1000*60);
+  Firebase.setwriteSizeLimit(fData, "tiny");
+  updateTime = millis();
 }
 
 void loop() {
   //Read values
   float t = dht.readTemperature();
   float h = dht.readHumidity();
-  Serial.print("Temperature: "); Serial.println(t);
-  Serial.print("Humidity: "); Serial.println(h);
-  delay(2000);
+
+  if (millis() - updateTime > 1000) {
+    json.set("/temperature", t);
+    json.set("/humidity", h);
+    Firebase.set(fData, "/values", json);
+    updateTime = millis();
+  }
 
   // Listen for incoming clients
   WiFiClient client = server.available();  
